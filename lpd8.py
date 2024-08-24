@@ -1,7 +1,7 @@
 import mido
 
 def main():
-    x = LPD8Controller()
+    c = LPD8Controller()
 
 class LPD8Controller():
     is_connected = False
@@ -19,7 +19,7 @@ class LPD8Controller():
 
 
     def give_instructions(self):
-        print("Instructions go here")
+        print("Twist a knob or hit a pad on the LPD8.")
 
     def connect(self):
         ins = mido.get_input_names()
@@ -80,16 +80,19 @@ class MessageProcessor():
     msg_type = False
 
     def __init__(self, msg):
-        self.choose_type(msg)
-        self.print_response()
+        self.__select_type(msg)
+        #self.print_response()
 
-    def choose_type(self, msg):
+    def __select_type(self, msg):
         if msg.type == 'note_on':
             self.message = NoteMessage(msg)
             self.msg_type = 'note'
-        elif msg.is_cc:
+        elif msg.type == 'control_change':
             self.message = CCMessage(msg)
             self.msg_type = 'cc'
+        elif msg.type == 'program_change':
+            self.message = ProgramChangeMessage(msg)
+            self.msg_type = 'program'
 
     def print_response(self):
         if (self.msg_type != False):
@@ -107,6 +110,9 @@ class Message():
 
 
 class CCMessage(Message):
+    def __init__(self, msg):
+        super().__init__(msg)
+
     def print_output(self):
         self.__debug_output()
 
@@ -120,5 +126,14 @@ class NoteMessage(Message):
         
     def __debug_output(self):
         print(self.msg)
+        print(self.msg.dict())
+
+class ProgramChangeMessage(Message):
+    def print_output(self):
+        self.__debug_output()
+        
+    def __debug_output(self):
+        print(self.msg)
+
 
 main() 
