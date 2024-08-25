@@ -1,7 +1,7 @@
 import mido
 
 def main():
-    c = LPD8Controller()
+    controller = LPD8Controller()
 
 class LPD8Controller():
     is_connected = False
@@ -42,33 +42,7 @@ class LPD8Controller():
     def get_pad_press(self):
         for msg in self.port:
             mp = MessageProcessor(msg)
-            mp.print_response()
-            #print(msg)
-            #print("channel", msg.channel)
-
-            # Turning the LPD8 into a voting system?
-            if (msg.type == 'note_on'):
-                #print("note:", msg.note)
-                if msg.note == 36:
-                    pad=1
-                if msg.note == 37:
-                    pad=2
-                if msg.note == 38:
-                    pad=3
-                if msg.note == 39:
-                    pad=4
-                if msg.note == 40:
-                    pad=5
-                if msg.note == 41:
-                    pad=6
-                if msg.note == 42:
-                    pad=7
-                if msg.note == 43:
-                    pad=8
-                elif (msg.note < 36 or msg.note > 43):
-                    print("Your LPD8 should be on Prog1!")
-                    pad = False
-                return(pad)
+            #mp.print_response()
 
     def process_note(self):
         pass
@@ -80,8 +54,11 @@ class MessageProcessor():
     msg_type = False
 
     def __init__(self, msg):
+        self.process_message(msg)
+        self.print_response()
+
+    def process_message(self, msg):
         self.__select_type(msg)
-        #self.print_response()
 
     def __select_type(self, msg):
         if msg.type == 'note_on':
@@ -101,6 +78,7 @@ class MessageProcessor():
 class Message():
     def __init__(self, msg):
         self.msg = msg
+        self.channel = msg.channel
         
     def print_output(self):
         pass
@@ -117,16 +95,73 @@ class CCMessage(Message):
         self.__debug_output()
 
     def __debug_output(self):
-        print(self.msg)
-        print(self.msg.type, ": ", self.msg.control, self.msg.value, self.msg.time)
+        print("CC", ": ", "cc#:", self.msg.control, "value:", self.msg.value, "channel", self.channel)
  
 class NoteMessage(Message):
+    def __init__(self, msg):
+        super().__init__(msg)
+        self.note = self.msg.note
+        self.map_note()
+
     def print_output(self):
         self.__debug_output()
         
     def __debug_output(self):
-        print(self.msg)
-        print(self.msg.dict())
+        print("channel:", self.channel, "pad:", self.pad)
+        #print(self.msg)
+        #print(self.msg.dict())
+
+    def map_note(self):
+
+        note_map = { 
+            0: {
+                36: 1,
+                37: 2,
+                38: 3,
+                39: 4,
+                40: 5,
+                41: 6,
+                42: 7,
+                43: 8
+            },
+            1: {
+                35: 1,
+                36: 2,
+                42: 3,
+                39: 4,
+                37: 5,
+                38: 6,
+                46: 7,
+                44: 8
+            },
+            2: {
+                60: 1,
+                62: 2,
+                64: 3,
+                65: 4,
+                67: 5,
+                69: 6,
+                71: 7,
+                72: 8
+            },
+            3: {
+                36: 1,
+                38: 2,
+                40: 3,
+                41: 4,
+                43: 5,
+                45: 6,
+                47: 7,
+                48: 8
+            }
+        }
+
+        try: 
+            self.pad = note_map[self.channel][self.note]
+        except:
+            print("some kind of pad error")
+            self.__debug_output()
+
 
 class ProgramChangeMessage(Message):
     def print_output(self):
